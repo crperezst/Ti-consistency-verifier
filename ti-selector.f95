@@ -55,18 +55,18 @@
 	real :: acc_thresh
 	
 	
-	real,    dimension(1000000,4) :: comp
-	real,    dimension(200,200,200,10) :: ti
-	real,    dimension(10) :: tif
-	real,    dimension(250,250,250,10) :: mti
-	real,    dimension(200,200,200) :: comp_grid
-	real,    dimension(250,250,250) :: mcomp_grid
-	real,    dimension(1050000,5) :: tmp
-	real,    dimension(1050000,4) :: tmp_ord
-	real,    dimension(100,4) :: c_event
-	real,    dimension(1,10) :: cm
-	real,    dimension(1,10) :: ncm
-	real,    dimension(1,10) :: cm2
+	real,allocatable :: comp(:,:)
+	real,allocatable :: ti(:,:,:,:)
+	real,allocatable :: tif(:)
+	real,allocatable :: mti(:,:,:,:)
+	real,allocatable :: comp_grid(:,:,:)
+	real,allocatable :: mcomp_grid(:,:,:)
+	real,allocatable :: tmp(:,:)
+	real,allocatable :: tmp_ord(:,:)
+	real,allocatable :: c_event(:,:)
+	real,allocatable :: cm(:,:)
+	real,allocatable :: ncm(:,:)
+	real,allocatable :: cm2(:,:)
 	logical :: testfl
 	real :: absolutecomp
 	
@@ -176,6 +176,9 @@
 		read(10,'(a40)',err=98) output_file
 	end if
 	
+	allocate (comp(comp_num_in_file,4))
+	allocate (c_event(max_conditioning_nodes,4))
+	
 	if (mode.ne.1.and.mode.ne.0) then
 		goto 95
 	end if
@@ -207,13 +210,6 @@
 		migrated_nodes=0
 		repeated_nodes=0
 		aux4=0
-		
-		do c40=1,10
-			cm(1,c40)=0
-			ncm(1,c40)=0
-			cm2(1,c40)=0
-		end do
-		
 		
 		
 		blocks_in_ti=blocks_x_ti*blocks_y_ti*blocks_z_ti
@@ -259,13 +255,30 @@
 			read(1,*,err=99)
 		end do
 		
+		
 		open(2,file=image_file)
 		read(2,*,err=97)
 		read(2,*,err=97) ti_num
 		do read_file_counter=1,ti_num
 			read(2,*,err=97)
 		end do
+
+		allocate (ti(blocks_x_ti,blocks_y_ti,blocks_z_ti,ti_num))
+		allocate (tif(ti_num))
+		allocate (mti(blocks_x_mti,blocks_y_mti,blocks_z_mti,ti_num))
+		allocate (comp_grid(blocks_x_comp,blocks_y_comp,blocks_z_comp))
+		allocate (mcomp_grid(blocks_x_mcomp_grid,blocks_y_mcomp_grid,blocks_z_mcomp_grid))
+		allocate (tmp(nt,5))
+		allocate (tmp_ord(nt,4))
+		allocate (cm(1,ti_num))
+		allocate (ncm(1,ti_num))
+		allocate (cm2(1,ti_num))
 		
+		do c40=1,ti_num
+			cm(1,c40)=0
+			ncm(1,c40)=0
+			cm2(1,c40)=0
+		end do
 		
 		open(3,file=output_file)
 		
@@ -329,7 +342,7 @@
 		write(3,*) "Number of repeated samples (not migrated and lost):"
 		write(3,*) repeated_nodes
 		
-		do c9=1,10
+		do c9=1,ti_num
 			do c10=1,blocks_z_mti
 				do c11=1,blocks_y_mti
 					do c12=1,blocks_x_mti
@@ -348,7 +361,7 @@
 			end do
 		end do
 		
-		do c16=1,10
+		do c16=1,ti_num
 			do c17=1,blocks_z_ti
 				do c18=1,blocks_y_ti
 					do c19=1,blocks_x_ti
@@ -538,11 +551,11 @@
 		
 		aux3=0
 		
-		do c38=1,10
+		do c38=1,ti_num
 			aux3=aux3+cm2(1,c38)
 		end do
 		
-		do c39=1,10
+		do c39=1,ti_num
 			ncm(1,c39)=cm2(1,c39)/aux3
 		end do
 		
@@ -559,12 +572,6 @@
 		comp_out_of_bounds=0
 		migrated_nodes=0
 		repeated_nodes=0
-		
-		do c40=1,10
-			cm(1,c40)=0
-			ncm(1,c40)=0
-		end do
-		
 		
 		
 		blocks_in_ti=blocks_x_ti*blocks_y_ti*blocks_z_ti
@@ -618,7 +625,23 @@
 			read(2,*,err=97)
 		end do
 		
+		allocate (ti(blocks_x_ti,blocks_y_ti,blocks_z_ti,ti_num))
+		allocate (tif(ti_num))
+		allocate (mti(blocks_x_mti,blocks_y_mti,blocks_z_mti,ti_num))
+		allocate (comp_grid(blocks_x_comp,blocks_y_comp,blocks_z_comp))
+		allocate (mcomp_grid(blocks_x_mcomp_grid,blocks_y_mcomp_grid,blocks_z_mcomp_grid))
+		allocate (tmp(nt,5))
+		allocate (tmp_ord(nt,4))
+		allocate (cm(1,ti_num))
+		allocate (ncm(1,ti_num))
+		allocate (cm2(1,ti_num))
 		
+		do c40=1,ti_num
+			cm(1,c40)=0
+			ncm(1,c40)=0
+		end do
+
+
 		open(3,file=output_file)
 		
 		do c1=1,comp_num_in_file
@@ -681,7 +704,7 @@
 		write(3,*) "Number of repeated samples (not migrated and lost):"
 		write(3,*) repeated_nodes
 		
-		do c9=1,10
+		do c9=1,ti_num
 			do c10=1,blocks_z_mti
 				do c11=1,blocks_y_mti
 					do c12=1,blocks_x_mti
@@ -700,7 +723,7 @@
 			end do
 		end do
 		
-		do c16=1,10
+		do c16=1,ti_num
 			do c17=1,blocks_z_ti
 				do c18=1,blocks_y_ti
 					do c19=1,blocks_x_ti
@@ -885,11 +908,11 @@
 		
 		aux3=0
 		
-		do c38=1,10
+		do c38=1,ti_num
 			aux3=aux3+cm(1,c38)
 		end do
 		
-		do c39=1,10
+		do c39=1,ti_num
 			ncm(1,c39)=cm(1,c39)/aux3
 		end do
 		
@@ -908,12 +931,6 @@
 		comp_out_of_bounds=0
 		migrated_nodes=0
 		repeated_nodes=0
-		
-		do c40=1,10
-			cm(1,c40)=0
-			ncm(1,c40)=0
-		end do
-		
 		
 		
 		blocks_in_ti=blocks_x_ti*blocks_y_ti*blocks_z_ti
@@ -970,7 +987,23 @@
 			read(2,*,err=97)
 		end do
 		
+		allocate (ti(blocks_x_ti,blocks_y_ti,blocks_z_ti,ti_num))
+		allocate (tif(ti_num))
+		allocate (mti(blocks_x_mti,blocks_y_mti,blocks_z_mti,ti_num))
+		allocate (comp_grid(blocks_x_comp,blocks_y_comp,blocks_z_comp))
+		allocate (mcomp_grid(blocks_x_mcomp_grid,blocks_y_mcomp_grid,blocks_z_mcomp_grid))
+		allocate (tmp(nt,5))
+		allocate (tmp_ord(nt,4))
+		allocate (cm(1,ti_num))
+		allocate (ncm(1,ti_num))
+		allocate (cm2(1,ti_num))
 		
+		do c40=1,ti_num
+			cm(1,c40)=0
+			ncm(1,c40)=0
+		end do
+
+
 		open(3,file=output_file)
 		
 		do c1=1,comp_num_in_file
@@ -1033,7 +1066,7 @@
 		write(3,*) "Number of repeated samples (not migrated and lost):"
 		write(3,*) repeated_nodes
 		
-		do c9=1,10
+		do c9=1,ti_num
 			do c10=1,blocks_z_mti
 				do c11=1,blocks_y_mti
 					do c12=1,blocks_x_mti
